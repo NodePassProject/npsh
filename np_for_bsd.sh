@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
-# NodePass Installer v0.4.0
+# NodePass Installer for BSD v0.4.0
 
 # defaults
 LANG=zh; IP=127.0.0.1; PORT=0; PREFIX=api; TLS=0; CRT=; KEY=;
