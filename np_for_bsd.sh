@@ -38,7 +38,7 @@ nodepass_start(){\$command --dir $WORK --host $IP --port $PORT --prefix $PREFIX 
 nodepass_stop(){kill \$(cat /var/run/nodepass.pid)}
 load_rc_config \$name;nodepass_enable=YES;run_rc_command "$1"
 EOF
-  chmod +x $RC;service nodepass start;ln -sf /etc/nodepass/np.sh $SCRIPTS
+  chmod +x $RC;service nodepass start;ln -sf /etc/nodepass/np_for_bsd.sh $SCRIPTS
   t "Installed $ver" "已安装 $ver"
 }
 
@@ -57,7 +57,7 @@ while [ "$1" ];do case $1 in
   --tls)TLS=$2;shift;;--crt)CRT=$2;shift;;--key)KEY=$2;shift;;-h)CMD=help;;esac;shift;done
 # help
 _do_help(){cat<<EOF
-$(t "Usage: np.sh [opts] cmd" "用法: np.sh [选项] 命令")
+$(t "Usage: np_for_bsd.sh [opts] cmd" "用法: np_for_bsd.sh [选项] 命令")
  cmds: install(-i) uninstall(-u) toggle(-o) restart(-r) upgrade(-v) key(-k) info(-s)
  opts: --lang zh|en --ip IP --port P --prefix PF --tls 0|1|2 --crt file --key file
 EOF
