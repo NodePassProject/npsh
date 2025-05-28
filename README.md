@@ -139,7 +139,7 @@ bash <(curl -sSL https://run.nodepass.eu/np.sh) \
 
 ## 系统要求
 
-- 操作系统：支持 Debian、Ubuntu、CentOS、Fedora、Alpine、Arch 和 OpenWrt 等 Linux 发行版
+- 操作系统：支持 Debian、Ubuntu、CentOS、Fedora、Alpine、Arch 和 OpenWRT 等 Linux 发行版
 - 架构：支持 x86_64 (amd64)、aarch64 (arm64) 和 armv7l (arm)
 - 权限：需要 root 权限运行脚本
 
