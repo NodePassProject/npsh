@@ -3,7 +3,7 @@
 
 # defaults
 LANG=zh; IP=127.0.0.1; PORT=0; PREFIX=api; TLS=0; CRT=; KEY=;
-REPO=NodePassProject/NodePass; API=https://api.github.com/repos/$REPO/releases/latest
+REPO=yosebyte/nodepass; API=https://api.github.com/repos/$REPO/releases/latest
 WORK=/etc/nodepass; BIN=/usr/local/bin/nodepass; SCRIPTS=/usr/local/bin/np; RC=/usr/local/etc/rc.d/nodepass
 
 # detect
