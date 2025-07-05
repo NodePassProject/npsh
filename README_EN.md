@@ -2,7 +2,7 @@
 
 [简体中文](README.md) | English
 
-`np.sh`: One-click deployment of the NodePass main program, providing high-performance TCP/UDP tunneling with multi-system support and flexible configuration.  
+`np.sh`: One-click deployment of the NodePass main program, providing high-performance TCP/UDP tunneling with multi-system support and flexible configuration.
 `dash.sh`: One-click deployment of the NodePassDash control panel, simplifying tunnel management and monitoring with containerization and HTTPS support.
 
 ---
@@ -22,6 +22,8 @@
   - [Features](#features-1)
   - [Usage Instructions](#usage-instructions)
   - [Uninstallation Instructions](#uninstallation-instructions)
+  - [Update Version](#update-version)
+  - [Reset Password](#reset-password)
 - [Deployment Screenshots](#deployment-screenshots)
 - [Feedback](#feedback)
 
@@ -71,7 +73,7 @@ bash <(curl -sSL https://run.nodepass.eu/np.sh)
 Follow the prompts to provide the following information:
 
 - Language selection (default: Chinese)
-- Server IP (default: 127.0.0.1)
+- Server IP (If it is 127.0.0.1, you can choose to create an instance with an intranet penetration API.)
 - Port (leave blank for auto-assigned port in the 1024–8192 range)
 - API prefix (default: `api`)
 - TLS mode (0: no encryption, 1: self-signed certificate, 2: custom certificate)
@@ -141,6 +143,7 @@ After installation, the `np` shortcut command is created:
 | `np -v`   | Upgrade NodePass             |
 | `np -o`   | Start/stop service           |
 | `np -k`   | Change API key               |
+| `np -k`   | Change API intranet penetration server |
 | `np -s`   | View API information         |
 | `np -h`   | Display help information     |
 
@@ -218,6 +221,30 @@ bash <(curl -sSL https://run.nodepass.eu/dash.sh) uninstall
 ```
 
 This will clean up the container, configuration files, and mounted directories.
+
+### Update Version
+
+Update the NodePassDash container:
+
+```bash
+bash <(wget -qO- https://run.nodepass.eu/dash.sh) update
+```
+or
+```bash
+bash <(curl -sSL https://run.nodepass.eu/dash.sh) update
+```
+
+This will update based on the local and remote versions.
+
+### Reset Password
+
+```bash
+bash <(wget -qO- https://run.nodepass.eu/dash.sh) resetpwd
+```
+or
+```bash
+bash <(curl -sSL https://run.nodepass.eu/dash.sh) resetpwd
+```
 
 ---
 

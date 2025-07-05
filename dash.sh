@@ -1,12 +1,32 @@
 #!/bin/bash
 
-# 更新时间 2025-06-18
+# 更新时间 2025-07-05
 
 # 定义颜色
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m' # 无色
+
+# 函数：显示帮助信息
+show_help() {
+  echo -e "${GREEN}NodePassDash 管理脚本使用说明${NC}"
+  echo -e "================================"
+  echo -e "${YELLOW}可用参数:${NC}"
+  echo -e "  ${GREEN}install${NC}     - 安装/配置 NodePassDash"
+  echo -e "  ${GREEN}update${NC}      - 检查并更新 NodePassDash 到最新版本"
+  echo -e "  ${GREEN}resetpwd${NC}    - 重置管理员密码"
+  echo -e "  ${GREEN}uninstall${NC}   - 卸载 NodePassDash"
+  echo -e "  ${GREEN}help${NC}        - 显示此帮助信息"
+  echo -e ""
+  echo -e "${YELLOW}使用示例:${NC}"
+  echo -e "  ${GREEN}./dash.sh install${NC}   # 正常安装"
+  echo -e "  ${GREEN}./dash.sh update${NC}    # 更新到最新版本"
+  echo -e "  ${GREEN}./dash.sh resetpwd${NC}  # 重置管理员密码"
+  echo -e "  ${GREEN}./dash.sh uninstall${NC} # 卸载 NodePassDash"
+  echo -e "  ${GREEN}./dash.sh help${NC}      # 显示帮助信息"
+  exit 0
+}
 
 # 函数：检查域名或IP地址格式
 validate_input() {
@@ -27,25 +47,106 @@ validate_input() {
 
 # 函数：检查端口是否在有效范围内
 validate_port() {
-    local port=$1
-    if ! [[ "$port" =~ ^[0-9]+$ ]] || [ "$port" -lt 1 ] || [ "$port" -gt 65535 ]; then
-        echo -e "${RED}错误：端口号 $port 无效。请提供一个在 1 到 65535 之间的端口号。${NC}"
-        return 1
-    fi
-    return 0
+  local port=$1
+  if ! [[ "$port" =~ ^[0-9]+$ ]] || [ "$port" -lt 1 ] || [ "$port" -gt 65535 ]; then
+    echo -e "${RED}错误：端口号 $port 无效。请提供一个在 1 到 65535 之间的端口号。${NC}"
+    return 1
+  fi
+  return 0
+}
+
+# 函数：重置管理员密码
+reset_admin_password() {
+  # 检查容器是否运行
+  if ! $CONTAINER_CMD inspect nodepassdash &>/dev/null; then
+    echo -e "${RED}错误：nodepassdash 容器未运行，无法重置密码。${NC}"
+    exit 1
+  fi
+
+  echo -e "${GREEN}正在重置管理员密码...${NC}"
+
+  # 直接执行命令并捕获输出
+  $CONTAINER_CMD exec -it nodepassdash /app/nodepassdash -resetpwd
+
+  exit 0
+}
+
+# 函数：检查并更新 NodePassDash
+update_nodepassdash() {
+  # 检查容器是否运行
+  if ! $CONTAINER_CMD inspect nodepassdash &>/dev/null; then
+    echo -e "${RED}错误：nodepassdash 容器未运行，无法更新。${NC}"
+    exit 1
+  fi
+
+  # 获取本地版本
+  local LOCAL_VERSION=$($CONTAINER_CMD exec -it nodepassdash /app/nodepassdash -v 2>/dev/null | awk '/NodePassDash/{gsub(/\r/,"",$NF); print $NF}')
+  if [ -z "$LOCAL_VERSION" ]; then
+    echo -e "${RED}无法获取本地版本。${NC}"
+    exit 1
+  fi
+
+  # 获取远程版本
+  local REMOTE_VERSION=$(curl -s https://api.github.com/repos/NodePassProject/NodePassDash/releases/latest | awk -F '"' '/"tag_name"/{print $4}' | sed "s/[Vv]//")
+  if [ -z "$REMOTE_VERSION" ]; then
+    echo -e "${RED}无法获取远程版本。${NC}"
+    exit 1
+  fi
+
+  # 显示版本信息
+  echo -e "${GREEN}本地版本: $LOCAL_VERSION${NC}"
+  echo -e "${GREEN}远程版本: $REMOTE_VERSION${NC}"
+
+  # 比较版本
+  if [ "$LOCAL_VERSION" == "$REMOTE_VERSION" ]; then
+    echo -e "${GREEN}当前已是最新版本，无需更新。${NC}"
+    exit 0
+  else
+    echo -e "${YELLOW}发现新版本 $REMOTE_VERSION (当前版本 $LOCAL_VERSION)${NC}"
+    read -p "$(echo -e ${YELLOW}是否要更新到最新版本? [y/N]: ${NC})" choice
+    case "$choice" in
+    y | Y)
+      echo -e "${GREEN}正在准备更新...${NC}"
+      ;;
+    *)
+      echo -e "${GREEN}已取消更新。${NC}"
+      exit 0
+      ;;
+    esac
+  fi
+
+  # 检查并安装 watchtower
+  if ! $CONTAINER_CMD inspect watchtower &>/dev/null; then
+    echo -e "${GREEN}正在临时运行 watchtower 容器进行更新...${NC}"
+    $CONTAINER_CMD run --rm \
+      -v /var/run/$CONTAINER_CMD.sock:/var/run/$CONTAINER_CMD.sock \
+      containrrr/watchtower \
+      --run-once \
+      --cleanup \
+      nodepassdash
+  else
+    echo -e "${GREEN}正在使用已安装的 watchtower 进行更新...${NC}"
+    $CONTAINER_CMD start watchtower
+  fi
+
+  # 等待更新完成
+  echo -e "${YELLOW}正在更新，请稍候...${NC}"
+  sleep 10
+
+  # 验证更新是否成功
+  local NEW_VERSION=$($CONTAINER_CMD exec -it nodepassdash /app/nodepassdash -v 2>/dev/null | awk '/NodePassDash/{gsub(/\r/,"",$NF); print $NF}')
+  if [ "$NEW_VERSION" == "$REMOTE_VERSION" ]; then
+    echo -e "${GREEN}更新成功！当前版本: $NEW_VERSION${NC}"
+  else
+    echo -e "${RED}更新失败，请检查日志。${NC}"
+    exit 1
+  fi
+
+  exit 0
 }
 
 # 函数：卸载 NodePassDash
 uninstall_nodepassdash() {
-  if command -v podman &>/dev/null; then
-    CONTAINER_CMD="podman"
-  elif command -v docker &>/dev/null; then
-    CONTAINER_CMD="docker"
-  else
-    echo -e "${RED}未找到容器管理工具，无法卸载。${NC}"
-    exit 1
-  fi
-
   if $CONTAINER_CMD inspect nodepassdash &>/dev/null; then
     echo -e "${GREEN}正在停止并删除 nodepassdash 容器...${NC}"
     $CONTAINER_CMD stop nodepassdash >/dev/null 2>&1
@@ -65,45 +166,153 @@ if [ "$EUID" -ne 0 ]; then
   exit 1
 fi
 
-# 检测系统类型
-if [ -f /etc/debian_version ]; then
-  OS="debian"
-elif [ -f /etc/lsb-release ]; then
-  OS="ubuntu"
-elif [ -f /etc/redhat-release ]; then
-  OS="centos"
-  # 检查 CentOS 版本
-  CENTOS_VERSION=$(rpm -E '%{rhel}')
-  if [ "$CENTOS_VERSION" -lt 8 ]; then
-    echo -e "${RED}错误：您的 CentOS 版本 $CENTOS_VERSION 过低。请使用 CentOS 8 或 9 版本。${NC}"
+# 检测容器管理工具并设置变量（只判断一次）
+if command -v podman &>/dev/null; then
+  CONTAINER_CMD="podman"
+  echo -e "${GREEN}检测到 Podman，将使用 Podman 作为容器管理工具${NC}"
+elif command -v docker &>/dev/null; then
+  CONTAINER_CMD="docker"
+  echo -e "${GREEN}检测到 Docker，将使用 Docker 作为容器管理工具${NC}"
+else
+  echo -e "${GREEN}未检测到容器管理工具，将尝试安装 Docker...${NC}"
+  CONTAINER_CMD="docker" # 设置为默认值，后续会安装
+fi
+
+# 检查参数
+case "$1" in
+"update")
+  # 如果容器管理工具不存在且未安装，尝试安装
+  if ! command -v $CONTAINER_CMD &>/dev/null; then
+    install_container_runtime
+  fi
+  update_nodepassdash
+  ;;
+"uninstall")
+  # 如果容器管理工具不存在且未安装，尝试安装
+  if ! command -v $CONTAINER_CMD &>/dev/null; then
+    install_container_runtime
+  fi
+  uninstall_nodepassdash
+  ;;
+"resetpwd")
+  # 如果容器管理工具不存在且未安装，尝试安装
+  if ! command -v $CONTAINER_CMD &>/dev/null; then
+    install_container_runtime
+  fi
+  reset_admin_password
+  ;;
+"install")
+  # 如果容器管理工具不存在且未安装，尝试安装
+  if ! command -v $CONTAINER_CMD &>/dev/null; then
+    install_container_runtime
+  fi
+  # 继续正常安装流程
+  ;;
+"help"|"")
+  show_help
+  ;;
+*)
+  echo -e "${RED}错误：未知参数 '$1'${NC}"
+  show_help
+  exit 1
+  ;;
+esac
+
+# 安装容器运行时的函数
+install_container_runtime() {
+  echo -e "${GREEN}正在安装 Docker...${NC}"
+  # 检测系统类型
+  if [ -f /etc/debian_version ]; then
+    OS="debian"
+  elif [ -f /etc/lsb-release ]; then
+    OS="ubuntu"
+  elif [ -f /etc/redhat-release ]; then
+    OS="centos"
+    # 检查 CentOS 版本
+    CENTOS_VERSION=$(rpm -E '%{rhel}')
+    if [ "$CENTOS_VERSION" -lt 8 ]; then
+      echo -e "${RED}错误：您的 CentOS 版本 $CENTOS_VERSION 过低。请使用 CentOS 8 或 9 版本。${NC}"
+      exit 1
+    fi
+  else
+    echo -e "${RED}不支持的操作系统${NC}"
     exit 1
   fi
-else
-  echo -e "${RED}不支持的操作系统${NC}"
-  exit 1
+
+  # 检查并安装 curl
+  if ! command -v curl &>/dev/null && ! command -v wget &>/dev/null; then
+    echo -e "${GREEN}curl 和 wget 都未安装，正在安装 curl...${NC}"
+    if [ "$OS" == "debian" ] || [ "$OS" == "ubuntu" ]; then
+      apt update >/dev/null 2>&1
+      apt install -y curl >/dev/null 2>&1
+    elif [ "$OS" == "centos" ]; then
+      yum install -y curl >/dev/null 2>&1
+    fi
+  fi
+
+  # 选择使用 wget 或 curl
+  if command -v wget &>/dev/null; then
+    DOWNLOAD_CMD="wget -qO-"
+  else
+    DOWNLOAD_CMD="curl -fsSL"
+  fi
+
+  # 使用官方脚本安装 Docker
+  bash <($DOWNLOAD_CMD get.docker.com) >/dev/null 2>&1
+  # 启动 Docker 并开启 IPv6
+  systemctl start docker >/dev/null 2>&1
+  systemctl enable docker >/dev/null 2>&1
+  echo -e "${GREEN}Docker 安装完成，正在开启 IPv6...${NC}"
+
+  # 检查是否存在 daemon.json，如果存在则备份
+  DAEMON_JSON="/etc/docker/daemon.json"
+  if [ -f $DAEMON_JSON ]; then
+    echo -e "${GREEN}检测到已有 daemon.json，正在备份为 daemon.json.bak...${NC}"
+    cp $DAEMON_JSON $DAEMON_JSON.bak
+    echo -e "${GREEN}备份完成。${NC}"
+  fi
+
+  # 创建新的 daemon.json
+  cat >$DAEMON_JSON <<EOF
+{
+  "ipv6": true,
+  "fixed-cidr-v6": "fd00::/80",
+  "experimental": true,
+  "ip6tables": true
+}
+EOF
+  echo -e "${GREEN}daemon.json 已创建，内容如下：${NC}"
+  cat $DAEMON_JSON
+
+  # 重启 Docker 服务
+  systemctl restart docker >/dev/null 2>&1
+  CONTAINER_CMD="docker"
+  echo -e "${GREEN}Docker 服务已重启。${NC}"
+}
+
+# 如果容器管理工具不存在且不是卸载操作，尝试安装
+if ! command -v $CONTAINER_CMD &>/dev/null && [[ "$1" != "uninstall" ]]; then
+  install_container_runtime
 fi
 
-# 检查并安装 curl
-if ! command -v curl &>/dev/null && ! command -v wget &>/dev/null; then
-  echo -e "${GREEN}curl 和 wget 都未安装，正在安装 curl...${NC}"
-  if [ "$OS" == "debian" ] || [ "$OS" == "ubuntu" ]; then
-    apt update >/dev/null 2>&1
-    apt install -y curl >/dev/null 2>&1
-  elif [ "$OS" == "centos" ]; then
-    yum install -y curl >/dev/null 2>&1
+# 配置容器管理工具的IPv6支持（如果使用Podman）
+if [ "$CONTAINER_CMD" == "podman" ]; then
+  # 检查并设置 Podman 的 IPv6 支持
+  PODMAN_CONFIG_DIR="$HOME/.config/containers"
+  mkdir -p "$PODMAN_CONFIG_DIR"
+  PODMAN_CONF="$PODMAN_CONFIG_DIR/containers.conf"
+
+  # 创建或更新 containers.conf 文件以启用 IPv6
+  if ! grep -q 'enable_ipv6' "$PODMAN_CONF" 2>/dev/null; then
+    echo -e "${GREEN}正在配置 Podman 以支持 IPv6...${NC}"
+    {
+      echo "[network]"
+      echo "enable_ipv6 = true"
+    } >>"$PODMAN_CONF"
+  else
+    echo -e "${GREEN}Podman 已配置为支持 IPv6。${NC}"
   fi
 fi
-
-# 选择使用 wget 或 curl
-if command -v wget &>/dev/null; then
-  DOWNLOAD_CMD="wget -qO-"
-else
-  DOWNLOAD_CMD="curl -fsSL"
-fi
-
-
-# 检查是否有卸载参数
-[[ "$1" == "uninstall" ]] && uninstall_nodepassdash
 
 # 询问用户输入域名或IP地址
 while true; do
@@ -159,67 +368,8 @@ while true; do
   break # 端口未被占用，退出循环
 done
 
-# 检测容器管理工具并设置变量
-if command -v podman &>/dev/null; then
-  CONTAINER_CMD="podman"
-  echo -e "${GREEN}检测到 Podman，将使用 Podman 作为容器管理工具${NC}"
-
-  # 检查并设置 Podman 的 IPv6 支持
-  PODMAN_CONFIG_DIR="$HOME/.config/containers"
-  mkdir -p "$PODMAN_CONFIG_DIR"
-  PODMAN_CONF="$PODMAN_CONFIG_DIR/containers.conf"
-
-  # 创建或更新 containers.conf 文件以启用 IPv6
-  if ! grep -q 'enable_ipv6' "$PODMAN_CONF" 2>/dev/null; then
-    echo -e "${GREEN}正在配置 Podman 以支持 IPv6...${NC}"
-    {
-      echo "[network]"
-      echo "enable_ipv6 = true"
-    } >> "$PODMAN_CONF"
-  else
-    echo -e "${GREEN}Podman 已配置为支持 IPv6。${NC}"
-  fi
-
-elif command -v docker &>/dev/null; then
-  CONTAINER_CMD="docker"
-  echo -e "${GREEN}检测到 Docker，将使用 Docker 作为容器管理工具${NC}"
-else
-  echo -e "${GREEN}未检测到容器管理工具，正在安装 Docker...${NC}"
-  # 使用官方脚本安装 Docker
-  bash <($DOWNLOAD_CMD get.docker.com) >/dev/null 2>&1
-  # 启动 Docker 并开启 IPv6
-  systemctl start docker >/dev/null 2>&1
-  systemctl enable docker >/dev/null 2>&1
-  echo -e "${GREEN}Docker 安装完成，正在开启 IPv6...${NC}"
-
-  # 检查是否存在 daemon.json，如果存在则备份
-  DAEMON_JSON="/etc/docker/daemon.json"
-  if [ -f $DAEMON_JSON ]; then
-    echo -e "${GREEN}检测到已有 daemon.json，正在备份为 daemon.json.bak...${NC}"
-    cp $DAEMON_JSON $DAEMON_JSON.bak
-    echo -e "${GREEN}备份完成。${NC}"
-  fi
-
-  # 创建新的 daemon.json
-  cat >$DAEMON_JSON <<EOF
-{
-  "ipv6": true,
-  "fixed-cidr-v6": "fd00::/80",
-  "experimental": true,
-  "ip6tables": true
-}
-EOF
-  echo -e "${GREEN}daemon.json 已创建，内容如下：${NC}"
-  cat $DAEMON_JSON
-
-  # 重启 Docker 服务
-  systemctl restart docker >/dev/null 2>&1
-  CONTAINER_CMD="docker"
-  echo -e "${GREEN}Docker 服务已重启。${NC}"
-fi
-
 # 检测 Caddy 是否已安装
-if ! [[ "$INPUT" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]] && ! [[ "$INPUT" =~ ^[0-9a-fA-F:]+$ ]]; then  
+if ! [[ "$INPUT" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]] && ! [[ "$INPUT" =~ ^[0-9a-fA-F:]+$ ]]; then
   if ! command -v caddy &>/dev/null; then
     echo -e "${GREEN}Caddy 未安装，正在安装...${NC}"
     if [ "$OS" == "debian" ] || [ "$OS" == "ubuntu" ]; then

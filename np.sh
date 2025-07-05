@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 
 # 当前脚本版本号
-SCRIPT_VERSION='0.0.2'
+SCRIPT_VERSION='0.0.3'
 
 # 环境变量用于在Debian或Ubuntu操作系统中设置非交互式（noninteractive）安装模式
 export DEBIAN_FRONTEND=noninteractive
 
 # Github 反代加速代理
-GH_PROXY='https://ghfast.top/'
+GH_PROXY='https://ghproxy.lvedong.eu.org/'
 
 # 工作目录和临时目录
 TEMP_DIR='/tmp/nodepass'
@@ -19,8 +19,8 @@ mkdir -p $TEMP_DIR
 
 E[0]="\n Language:\n 1. 简体中文\n 2. English"
 C[0]="${E[0]}"
-E[1]="The nodepass binary has been added to system path, enabling global access and direct execution."
-C[1]="nodepass 二进制文件已添加至系统路径，支持全局直接调用"
+E[1]="1.For intranet machines, support creating an instance that tunnels to the NodePass server during installation; 2.Change Github proxy, to better support the domestic environment and only IPv6 machines."
+C[1]="1.对于内网机器，支持在安装的时候一并创建穿透到 NodePass 服务端的实例; 2.更换 Github 代理，以更好的支持墙内环境和仅IPv6机器"
 E[2]="The script must be run as root, you can enter sudo -i and then download and run again. Feedback: [https://github.com/NodePassProject/npsh/issues]"
 C[2]="必须以 root 方式运行脚本，可以输入 sudo -i 后重新下载运行，问题反馈:[https://github.com/NodePassProject/npsh/issues]"
 E[3]="Unsupported architecture: \$(uname -m)"
@@ -41,8 +41,8 @@ E[10]="NodePass installed successfully!"
 C[10]="NodePass 安装成功！"
 E[11]="NodePass has been uninstalled"
 C[11]="NodePass 已卸载"
-E[12]="Please enter listener IP (press Enter for 127.0.0.1):"
-C[12]="请输入监听 IP (回车使用 127.0.0.1):"
+E[12]="Please enter listener IP (The internal machine uses 127.0.0.1):"
+C[12]="请输入监听 IP (内网机器使用 127.0.0.1):"
 E[13]="Please enter the port (1024-65535, press Enter for random port):"
 C[13]="请输入端口 (1024-65535，回车使用随机端口):"
 E[14]="Please enter API prefix (lowercase letters, numbers and / only, press Enter for default \"api\"):"
@@ -61,7 +61,7 @@ E[20]="Failed to get latest version"
 C[20]="无法获取最新版本"
 E[21]="Running in container environment, skipping service creation and starting process directly"
 C[21]="在容器环境中运行，跳过服务创建，直接启动进程"
-E[22]="NodePass Script Usage / NodePass 脚本使用方法:\n np - Show menu / 显示菜单\n np -i - Install NodePass / 安装 NodePass\n np -u - Uninstall NodePass / 卸载 NodePass\n np -v - Upgrade NodePass / 升级 NodePass\n np -o - Toggle service status (start/stop) / 切换服务状态 (开启/停止)\n np -k - Change NodePass API key / 更换 NodePass API key\n np -s - Show NodePass API info / 显示 NodePass API 信息\n np -h - Show help information / 显示帮助信息"
+E[22]="NodePass Script Usage / NodePass 脚本使用方法:\n np - Show menu / 显示菜单\n np -i - Install NodePass / 安装 NodePass\n np -u - Uninstall NodePass / 卸载 NodePass\n np -v - Upgrade NodePass / 升级 NodePass\n np -o - Toggle service status (start/stop) / 切换服务状态 (开启/停止)\n np -k - Change NodePass API key / 更换 NodePass API key\n np -c - Change API intranet penetration server / 更换 API 内网穿透的服务器\n np -s - Show NodePass API info / 显示 NodePass API 信息\n np -h - Show help information / 显示帮助信息"
 C[22]="${E[22]}"
 E[23]="Please enter the path to your TLS certificate file:"
 C[23]="请输入您的 TLS 证书文件路径:"
@@ -153,6 +153,26 @@ E[66]="NodePass Local Core:"
 C[66]="NodePass 本地核心:"
 E[67]="NodePass Latest Core:"
 C[67]="NodePass 最新核心:"
+E[68]="Please enter the IP of the public machine (leave blank to not penetrate):"
+C[68]="如要把内网的 API 穿透到公网的 NodePass 服务端，请输入公网机器的 IP (留空则不穿透):"
+E[69]="Please enter the port of the public machine:"
+C[69]="请输入穿透到公网的 NodePass 服务端的端口:"
+E[70]="Change API intranet penetration server"
+C[70]="更换 API 内网穿透的服务器"
+E[71]="Please enter the password (default is no password):"
+C[71]="输入密码（默认无密码）:"
+E[72]="The service of intranet penetration to remote has been created successfully"
+C[72]="内网穿透到远程的服务已创建成功"
+E[73]="API intranet penetration server creation failed!"
+C[73]="API 内网穿透到远程的服务创建失败!"
+E[74]="Not a valid IPv4,IPv6 address or domain name"
+C[74]="不是有效的IPv4,IPv6地址或域名"
+E[75]="Please enter the IP of the intranet penetration server:"
+C[75]="输入新的内网穿透服务端 IP 或域名:"
+E[76]="Successfully modified the intranet penetration instance"
+C[76]="成功修改内网穿透实例"
+E[77]="Failed to modify the intranet penetration instance"
+C[77]="修改内网穿透实例失败"
 
 # 自定义字体彩色，read 函数
 warning() { echo -e "\033[31m\033[01m$*\033[0m"; }  # 红色
@@ -257,9 +277,7 @@ check_system() {
   esac
 
   # 如果在容器环境中，覆盖服务管理方式
-  if [ "$IN_CONTAINER" = 1 ]; then
-    SERVICE_MANAGE="none"
-  fi
+  [ "$IN_CONTAINER" = 1 ] && SERVICE_MANAGE="none"
 }
 
 # 检查安装状态，状态码: 2 未安装， 1 已安装未运行， 0 运行中
@@ -303,12 +321,12 @@ check_dependencies() {
   DEPS_INSTALL=()
 
   # 检查 wget 和 curl
-  if [ -x "$(type -p wget)" ]; then
-    DOWNLOAD_TOOL="wget"
-    DOWNLOAD_CMD="wget -q"
-  elif [ -x "$(type -p curl)" ]; then
+  if [ -x "$(type -p curl)" ]; then
     DOWNLOAD_TOOL="curl"
     DOWNLOAD_CMD="curl -sL"
+  elif [ -x "$(type -p wget)" ]; then
+    DOWNLOAD_TOOL="wget"
+    DOWNLOAD_CMD="wget -q"
   else
     # 如果都没有，安装 curl
     DEPS_INSTALL+=("curl")
@@ -392,57 +410,80 @@ check_system_info() {
   fi
 }
 
-# 检查端口是否可用
+# 验证IPv4或IPv6地址格式，返回0表示有效，返回1表示无效
+validate_ip_address() {
+  local IP="$1"
+  # IPv4正则表达式
+  local IPV4_REGEX='^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$'
+  # IPv6正则表达式（简化版）
+  local IPV6_REGEX='^([0-9a-fA-F]{0,4}:){1,7}[0-9a-fA-F]{0,4}$'
+  # 域名正则表达式（支持常规域名和带点的子域名，不支持特殊字符）
+  local DOMAIN_REGEX='^([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$'
+
+  # localhost 特殊处理
+  [ "$IP" = "localhost" ] && IP="127.0.0.1"
+  if [[ "$IP" =~ $IPV4_REGEX ]] || [[ "$IP" =~ $IPV6_REGEX ]] || [[ "$IP" =~ $DOMAIN_REGEX ]]; then
+    return 0  # 有效IP地址
+  else
+    warning " $(text 74) "
+    return 1  # 无效IP地址
+  fi
+}
+
+# 检查端口是否可用，返回0表示可用，返回1表示被占用，返回2表示端口不在有效范围内
 check_port() {
   local PORT=$1
+  local NO_CHECK_USED=$2
   # 检查端口是否为数字且在有效范围内
   if ! [[ "$PORT" =~ ^[0-9]+$ ]] || [ "$PORT" -lt 1024 ] || [ "$PORT" -gt 65535 ]; then
     return 2  # 返回2表示端口不在有效范围内
   fi
 
-  # 检查端口是否被占用
-  # 方法1: 使用 nc 命令
-  if [ $(type -p nc) ]; then
-    nc -z 127.0.0.1 "$PORT" >/dev/null 2>&1
-    if [ $? -eq 0 ]; then
-      return 1  # 返回1表示端口被占用
+  if ! grep -q 'no_check_used' <<< "$NO_CHECK_USED"; then
+    # 检查端口是否被占用
+    # 方法1: 使用 nc 命令
+    if [ $(type -p nc) ]; then
+      nc -z 127.0.0.1 "$PORT" >/dev/null 2>&1
+      if [ $? -eq 0 ]; then
+        return 1  # 返回1表示端口被占用
+      fi
+    # 方法2: 使用 lsof 命令
+    elif [ $(type -p lsof) ]; then
+      lsof -i:"$PORT" >/dev/null 2>&1
+      if [ $? -eq 0 ]; then
+        return 1  # 返回1表示端口被占用
+      fi
+    # 方法3: 使用 netstat 命令
+    elif [ $(type -p netstat) ]; then
+      netstat -nltup 2>/dev/null | grep -q ":$PORT "
+      if [ $? -eq 0 ]; then
+        return 1  # 返回1表示端口被占用
+      fi
+    # 方法4: 使用 ss 命令
+    elif [ $(type -p ss) ]; then
+      ss -nltup 2>/dev/null | grep -q ":$PORT "
+      if [ $? -eq 0 ]; then
+        return 1  # 返回1表示端口被占用
+      fi
+    # 方法5: 尝试使用/dev/tcp检查
+    else
+      (echo >/dev/tcp/127.0.0.1/"$PORT") >/dev/null 2>&1
+      if [ $? -eq 0 ]; then
+        return 1  # 返回1表示端口被占用
+      fi
     fi
-  # 方法2: 使用 lsof 命令
-  elif [ $(type -p lsof) ]; then
-    lsof -i:"$PORT" >/dev/null 2>&1
-    if [ $? -eq 0 ]; then
-      return 1  # 返回1表示端口被占用
-    fi
-  # 方法3: 使用 netstat 命令
-  elif [ $(type -p netstat) ]; then
-    netstat -nltup 2>/dev/null | grep -q ":$PORT "
-    if [ $? -eq 0 ]; then
-      return 1  # 返回1表示端口被占用
-    fi
-  # 方法4: 使用 ss 命令
-  elif [ $(type -p ss) ]; then
-    ss -nltup 2>/dev/null | grep -q ":$PORT "
-    if [ $? -eq 0 ]; then
-      return 1  # 返回1表示端口被占用
-    fi
-  # 方法5: 尝试使用/dev/tcp检查
-  else
-    (echo >/dev/tcp/127.0.0.1/"$PORT") >/dev/null 2>&1
-    if [ $? -eq 0 ]; then
-      return 1  # 返回1表示端口被占用
-    fi
-  fi
 
-  return 0  # 返回0表示端口可用
+    return 0  # 返回0表示端口可用
+  fi
 }
 
 # 检测是否需要启用 Github CDN，如能直接连通，则不使用
 check_cdn() {
   if [ -n "$GH_PROXY" ]; then
     if [ "$DOWNLOAD_TOOL" = "wget" ]; then
-      wget --server-response --quiet --output-document=/dev/null --no-check-certificate --tries=2 --timeout=3 https://raw.githubusercontent.com/yosebyte/nodepass/refs/heads/main/README.md >/dev/null 2>&1 && unset GH_PROXY
+      wget --server-response --quiet --output-document=/dev/null --no-check-certificate --tries=2 --timeout=3 ${GH_PROXY}https://raw.githubusercontent.com/yosebyte/nodepass/refs/heads/main/README.md &>/dev/null || unset GH_PROXY
     else
-      curl -sL --connect-timeout 3 --max-time 3 https://raw.githubusercontent.com/yosebyte/nodepass/refs/heads/main/README.md -o /dev/null >/dev/null 2>&1 && unset GH_PROXY
+      curl -sL --connect-timeout 3 --max-time 3 ${GH_PROXY}https://raw.githubusercontent.com/yosebyte/nodepass/refs/heads/main/README.md -o /dev/null &>/dev/null || unset GH_PROXY
     fi
   fi
 }
@@ -509,18 +550,29 @@ get_api_url() {
 
     # 如果找到了CMD行，通过正则提取各个参数
     if [ -n "$CMD_LINE" ]; then
-      PORT=$(sed -n 's#.*:\([0-9]\+\)\/.*#\1#p' <<< "$CMD_LINE")
-      PREFIX=$(sed -n 's#.*:[0-9]\+/\([^?]*\)?log=.*#\1#p' <<< "$CMD_LINE")
-      LOG_LEVEL=$(sed -n 's#.*log=\([^&]*\).*#\1#p' <<< "$CMD_LINE")
-      TLS_MODE=$(sed -n 's#.*tls=\([^&]*\).*#\1#p' <<< "$CMD_LINE")
-      grep -qw '0' <<< "$TLS_MODE" && HTTP_S="http" || HTTP_S="https"
+      [[ "$CMD_LINE" =~ master://.*:([0-9]+)/([^?]+)\?log=([^&]+)\&tls=([0-2]) ]]
+      PORT="${BASH_REMATCH[1]}"
+      PREFIX="${BASH_REMATCH[2]}"
+      LOG_LEVEL="${BASH_REMATCH[3]}"
+      TLS_MODE="${BASH_REMATCH[4]}"
+      grep -qw '0' <<< "$TLS_MODE" && local HTTP_S="http" || local HTTP_S="https"
     fi
 
-    # 处理IPv6地址格式
-    grep -q ':' <<< "$SERVER_IP" && URL_SERVER_IP="[$SERVER_IP]" || URL_SERVER_IP="$SERVER_IP"
+    # 优先查找是否有内网穿透的服务器
+    unset BASH_REMATCH
+    if grep -q '.' <<< "$REMOTE"; then
+      [[ $REMOTE =~ (.*@)?(.*):([0-9]+)$ ]]
+      local URL_SERVER_PASSWORD="${BASH_REMATCH[1]}"
+      local URL_SERVER_IP="${BASH_REMATCH[2]}"
+      local URL_SERVER_PORT="${BASH_REMATCH[3]}"
+    else
+      local URL_SERVER_PORT=$(sed -n 's#.*:\([0-9]\+\)\/.*#\1#p' <<< "$CMD_LINE")
+      # 处理IPv6地址格式
+      grep -q ':' <<< "$SERVER_IP" && local URL_SERVER_IP="[$SERVER_IP]" || local URL_SERVER_IP="$SERVER_IP"
+    fi
 
     # 构建API URL
-    API_URL="${HTTP_S}://${URL_SERVER_IP}:${PORT}/${PREFIX:+${PREFIX%/}/}v1"
+    API_URL="${HTTP_S}://${URL_SERVER_PASSWORD}${URL_SERVER_IP}:${URL_SERVER_PORT}/${PREFIX:+${PREFIX%/}/}v1"
     grep -q 'output' <<< "$1" && info " $(text 39) $API_URL "
   else
     warning " $(text 59) "
@@ -543,7 +595,7 @@ get_random_port() {
   local RANDOM_PORT
   while true; do
     RANDOM_PORT=$((RANDOM % 7168 + 1024))
-    check_port "$RANDOM_PORT" && break
+    check_port "$RANDOM_PORT" "check_used" && break
   done
   echo "$RANDOM_PORT"
 }
@@ -557,9 +609,9 @@ get_local_version() {
 get_latest_version() {
   # 获取最新版本号
   if [ "$DOWNLOAD_TOOL" = "wget" ]; then
-    LATEST_VERSION=$(wget -qO- "https://api.github.com/repos/yosebyte/nodepass/releases/latest" | awk -F '"' '/tag_name/{print $4}')
+    LATEST_VERSION=$(wget -qO- "${GH_PROXY}https://api.github.com/repos/yosebyte/nodepass/releases/latest" | awk -F '"' '/tag_name/{print $4}')
   else
-    LATEST_VERSION=$(curl -sL "https://api.github.com/repos/yosebyte/nodepass/releases/latest" | awk -F '"' '/tag_name/{print $4}')
+    LATEST_VERSION=$(curl -sL "${GH_PROXY}https://api.github.com/repos/yosebyte/nodepass/releases/latest" | awk -F '"' '/tag_name/{print $4}')
   fi
 
   if [ -z "$LATEST_VERSION" ] || [ "$LATEST_VERSION" = "null" ]; then
@@ -622,7 +674,7 @@ on_off() {
 # 启动 NodePass 服务
 start_nodepass() {
   info " $(text 51) "
-  
+
   # 先清理可能存在的僵尸进程
   if [ "$IN_CONTAINER" = 1 ] || [ "$SERVICE_MANAGE" = "none" ]; then
     # 查找僵尸进程并尝试清理
@@ -633,7 +685,7 @@ start_nodepass() {
       ZOMBIE_PIDS=$(ps -ef | grep -v grep | grep "nodepass" | grep "<defunct>" | awk '{print $2}')
       [ -n "$ZOMBIE_PIDS" ] && echo "$ZOMBIE_PIDS" | xargs -r kill -9 >/dev/null 2>&1
     fi
-    
+
     # 从 data 文件中获取 CMD 参数
     if [ -s "$WORK_DIR/data" ] && grep -q "CMD=" "$WORK_DIR/data"; then
       source "$WORK_DIR/data"
@@ -787,32 +839,14 @@ parse_args() {
 
 # 主安装函数
 install() {
-  # 处理 SERVER_IP 的函数
-  process_server_ip() {
-    local IP="$1"
-    # 如果为空或者是本地地址的各种形式，都统一为 127.0.0.1
-    if [ -z "$IP" ] || [ "$IP" = "127.0.0.1" ] || [ "$IP" = "::1" ] || [ "$IP" = "localhost" ]; then
-      SERVER_IP="127.0.0.1"
-      LOCALHOST="127.0.0.1"
-    else
-      SERVER_IP="$IP"
-      LOCALHOST=""
-    fi
-  }
-
   # 服务器 IP
-  if [ -n "$ARGS_SERVER_IP" ]; then
-    process_server_ip "$ARGS_SERVER_IP"
-  else
-    while true; do
-      reading "\n (1/4) $(text 12) " USER_INPUT
-      process_server_ip "$USER_INPUT"
-      break
-    done
-  fi
-  grep -q ':' <<< "$SERVER_IP" && URL_SERVER_IP="[$SERVER_IP]" || URL_SERVER_IP="$SERVER_IP"
+  [ -n "$ARGS_SERVER_IP" ] && SERVER_INPUT="$ARGS_SERVER_IP" || reading "\n (1/4) $(text 12) " SERVER_INPUT
+  while ! validate_ip_address  "$SERVER_INPUT"; do
+    reading "\n (1/4) $(text 12) " SERVER_INPUT
+  done
+  [[ "$SERVER_INPUT" = "localhost" || "$SERVER_INPUT" = "127.0.0.1" || "$SERVER_INPUT" = "::1" ]] && SERVER_IP="127.0.0.1" || SERVER_IP="$SERVER_INPUT"
 
- # 端口
+  # 端口
   while true; do
     [ -n "$ARGS_PORT" ] && PORT="$ARGS_PORT" || reading "\n (2/4) $(text 13) " PORT
     # 如果用户直接回车，使用随机端口
@@ -821,7 +855,7 @@ install() {
       info " $(text 37) $PORT"
       break
     else
-      check_port "$PORT"
+      check_port "$PORT" "check_used"
       local PORT_STATUS=$?
 
       if [ "$PORT_STATUS" = 2 ]; then
@@ -838,6 +872,43 @@ install() {
       fi
     fi
   done
+
+  # 如果是内网机器，用于穿透到公网服务端 IP 和 Port
+  if grep -q '127.0.0.1' <<< "$SERVER_IP"; then
+    [ -z "$ARGS_REMOTE_SERVER_IP" ] && reading "\n $(text 68) " REMOTE_SERVER_INPUT
+    until grep -q '^$' <<< "$REMOTE_SERVER_INPUT" || validate_ip_address "$REMOTE_SERVER_INPUT"; do
+      reading "\n $(text 68) " REMOTE_SERVER_INPUT
+    done
+
+    # 如果输入了公网 IP，则需要进一步输入端口和认证密码
+    if grep -q '.' <<< "$REMOTE_SERVER_INPUT"; then
+      [ -z "$ARGS_REMOTE_PORT" ] && reading "\n $(text 69) " REMOTE_PORT_INPUT
+      while ! check_port "$REMOTE_PORT_INPUT" "no_check_used"; do
+        warning " $(text 41) "
+        reading "\n $(text 69) " REMOTE_PORT_INPUT
+      done
+
+      [ -z "$ARGS_REMOTE_PASSWORD" ] && reading "\n $(text 71) " REMOTE_PASSWORD_INPUT
+      grep -q '.' <<< "$REMOTE_PASSWORD_INPUT" && REMOTE_PASSWORD_INPUT+="@"
+    fi
+  fi
+
+  # 判断远程服务器和 IPv6 地址，构建最终显示的 URL
+  if [[ "$REMOTE_SERVER_INPUT" =~ ^([0-9a-fA-F]{0,4}:){1,7}[0-9a-fA-F]{0,4}$ ]]; then
+    URL_SERVER_IP="[$REMOTE_SERVER_INPUT]"
+    URL_SERVER_PORT="$REMOTE_PORT_INPUT"
+  elif [[ "$REMOTE_SERVER_INPUT" =~ ^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$ || "$REMOTE_SERVER_INPUT" =~ ^([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$ ]]; then
+    URL_SERVER_IP="$REMOTE_SERVER_INPUT"
+    URL_SERVER_PORT="$REMOTE_PORT_INPUT"
+  elif [[ "$SERVER_INPUT" =~ ^([0-9a-fA-F]{0,4}:){1,7}[0-9a-fA-F]{0,4}$ ]]; then
+    SERVER_IP="[$SERVER_INPUT]"
+    URL_SERVER_IP="$SERVER_IP"
+    URL_SERVER_PORT="$PORT"
+  elif [[ "$SERVER_INPUT" =~ ^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$ ]]; then
+    SERVER_IP="$SERVER_INPUT"
+    URL_SERVER_IP="$SERVER_IP"
+    URL_SERVER_PORT="$PORT"
+  fi
 
   # API 前缀
   while true; do
@@ -931,7 +1002,7 @@ install() {
   [ ! -f "$TEMP_DIR/nodepass" ] && error " $(text 9) "
 
   # 构建命令行
-  CMD="master://${LOCALHOST}:${PORT}/${PREFIX}?log=info&tls=${TLS_MODE}${CRT_PATH:-}"
+  CMD="master://${SERVER_IP}:${PORT}/${PREFIX}?log=info&tls=${TLS_MODE}${CRT_PATH:-}"
 
   # 移动到工作目录，保存语言选择和服务器IP信息到单个文件
   mkdir -p $WORK_DIR
@@ -957,11 +1028,36 @@ install() {
     get_api_key
     info "\n $(text 10) "
 
+    # 如是需要映射到公网的，则执行 api
+    if grep -q '.' <<< "$REMOTE_SERVER_INPUT" && grep -q '.' <<< "$REMOTE_PORT_INPUT"; then
+      # 执行 api
+      if [ "$DOWNLOAD_TOOL" = "curl" ]; then
+        local CREATE_NEW_INSTANCE_ID=$(curl -sS -X 'POST' \
+          "http://127.0.0.1:${PORT}/${PREFIX}/v1/instances" \
+          -H 'accept: application/json' \
+          -H "X-API-Key: ${KEY}" \
+          -H 'Content-Type: application/json' \
+          -d "{
+            \"url\": \"client://${REMOTE_PASSWORD_INPUT}${URL_SERVER_IP}:${URL_SERVER_PORT}/127.0.0.1:${PORT}?log=error\"
+          }" 2>&1 | sed 's/{"id":"\([0-9a-f]\{8\}\)".*/\1/')
+      else
+        local CREATE_NEW_INSTANCE_ID=$(wget -qO- --method=POST \
+          --header="accept: application/json" \
+          --header="X-API-Key: ${KEY}" \
+          --header="Content-Type: application/json" \
+          --body-data="{\"url\": \"client://${REMOTE_PASSWORD_INPUT}${URL_SERVER_IP}:${URL_SERVER_PORT}/127.0.0.1:${PORT}?log=error\"}" \
+          "http://127.0.0.1:${PORT}/${PREFIX}/v1/instances" 2>&1 | sed 's/{"id":"\([0-9a-f]\{8\}\)".*/\1/')
+      fi
+
+      [ "${#CREATE_NEW_INSTANCE_ID}" = 8 ] && info "\n $(text 72) \n" || warning "\n $(text 73) \n"
+      grep -q '.' <<< "$REMOTE_SERVER_INPUT" && grep -q '.' <<< "$REMOTE_PORT_INPUT" && echo -e "REMOTE=${REMOTE_PASSWORD_INPUT}${URL_SERVER_IP}:${URL_SERVER_PORT}" >> $WORK_DIR/data
+    fi
+
     # 输出安装信息
     echo "------------------------"
     info " $(text 60) $(text 34) "
     info " $(text 35) "
-    info " $(text 39) ${HTTP_S}://${URL_SERVER_IP}:${PORT}/${PREFIX}/v1"
+    info " $(text 39) ${HTTP_S}://${URL_SERVER_IP}:${URL_SERVER_PORT}/${PREFIX}/v1"
     info " $(text 40) ${KEY}"
 
     echo "------------------------"
@@ -1130,6 +1226,57 @@ uninstall() {
   info " $(text 11) "
 }
 
+# 更换 NodePass API 内网穿透的服务器
+change_api_server() {
+  reading "\n $(text 75) " REMOTE_SERVER_INPUT
+  until validate_ip_address "$REMOTE_SERVER_INPUT"; do
+    reading "\n $(text 75) " REMOTE_SERVER_INPUT
+  done
+
+  [[ "$REMOTE_SERVER_INPUT" =~ ^([0-9a-fA-F]{0,4}:){1,7}[0-9a-fA-F]{0,4}$ ]] && REMOTE_SERVER_INPUT="[${REMOTE_SERVER_INPUT}]"
+
+  # 如果输入了公网 IP，则需要进一步输入端口和认证密码
+  if grep -q '.' <<< "$REMOTE_SERVER_INPUT"; then
+    reading "\n $(text 69) " REMOTE_PORT_INPUT
+    while ! check_port "$REMOTE_PORT_INPUT" "no_check_used"; do
+      warning " $(text 41) "
+      reading "\n $(text 69) " REMOTE_PORT_INPUT
+    done
+
+    reading "\n $(text 71) " REMOTE_PASSWORD_INPUT
+    grep -q '.' <<< "$REMOTE_PASSWORD_INPUT" && REMOTE_PASSWORD_INPUT+="@"
+  fi
+
+  # 执行 api
+  if [ "$DOWNLOAD_TOOL" = "curl" ]; then
+    # 修改内网穿透实例内容
+    curl -sS -X 'PUT' \
+      "http://${SERVER_IP}:${PORT}/${PREFIX}/v1/instances/${INSTANCE_ID}" \
+      -H 'accept: application/json' \
+      -H "X-API-Key: ${KEY}" \
+      -H 'Content-Type: application/json' \
+      -d "{
+        \"url\": \"client://${REMOTE_PASSWORD_INPUT}${REMOTE_SERVER_INPUT}:${REMOTE_PORT_INPUT}/127.0.0.1:${PORT}?log=error\"
+      }" 2>&1
+  else
+    # 修改内网穿透实例内容
+    wget -qO- --method=PUT \
+      --header="accept: application/json" \
+      --header="X-API-Key: ${KEY}" \
+      --header="Content-Type: application/json" \
+      --body-data="{\"url\": \"client://${REMOTE_PASSWORD_INPUT}${REMOTE_SERVER_INPUT}:${REMOTE_PORT_INPUT}/127.0.0.1:${PORT}?log=error\"}" \
+      "http://${SERVER_IP}:${PORT}/${PREFIX}/v1/instances/${INSTANCE_ID}" 2>&1
+  fi
+
+  # 更新 data 文件
+  if [ "$?" = 0 ]; then
+    sed -i "s/^REMOTE=.*/REMOTE=${REMOTE_PASSWORD_INPUT}${REMOTE_SERVER_INPUT}:${REMOTE_PORT_INPUT}/" $WORK_DIR/data
+    info "\n $(text 76) \n"
+  else
+    warning "\n $(text 77) \n"
+  fi
+}
+
 # 更换 NodePass API key
 change_api_key() {
   local INSTALL_STATUS=$1
@@ -1199,7 +1346,7 @@ menu_setting() {
   INSTALL_STATUS=$1
 
   # 清空数组
-  unset OPTION ACTION 
+  unset OPTION ACTION
 
   # 获取在线的最新 NodePass 版本
   get_latest_version
@@ -1232,6 +1379,7 @@ menu_setting() {
       OPTION[2]="2. $(text 62) (np -k)"
       OPTION[3]="3. $(text 30) (np -v)"
       OPTION[4]="4. $(text 29) (np -u)"
+      grep -q '.' <<< "$REMOTE" && OPTION[5]="5. $(text 70) (np -c)"
       OPTION[0]="0. $(text 31)"
 
       # 服务未开启时的动作
@@ -1239,6 +1387,7 @@ menu_setting() {
       ACTION[2]() { change_api_key; exit 0; }
       ACTION[3]() { upgrade_nodepass; exit 0; }
       ACTION[4]() { uninstall; exit 0; }
+      grep -q '.' <<< "$REMOTE" && ACTION[5]() { change_api_server; exit 0; }
       ACTION[0]() { exit 0; }
   fi
 }
@@ -1356,6 +1505,16 @@ main() {
     -k)
       # 更换 API key
       [ "$INSTALL_STATUS" = 2 ] && warning " ${E[59]}\n ${C[59]} " || change_api_key $INSTALL_STATUS
+      ;;
+    -c)
+      # 更换 API 服务器
+      if [ "$INSTALL_STATUS" != 2 ]; then
+        get_api_url
+        get_api_key
+        change_api_server
+      else
+        warning " ${E[59]}\n ${C[59]} "
+      fi
       ;;
     *)
       # 默认菜单

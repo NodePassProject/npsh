@@ -26,6 +26,8 @@
   * [功能特色](#功能特色-1)
   * [使用说明](#使用说明)
   * [卸载说明](#卸载说明)
+  * [更新版本](#更新版本)
+  * [重置密码](#重置密码)
 * [部署截图](#部署截图)
 * [常见问题与反馈](#常见问题与反馈)
 
@@ -75,7 +77,7 @@ bash <(curl -sSL https://run.nodepass.eu/np.sh)
 跟随提示操作，依次填写以下信息：
 
 * 语言选择（默认中文）
-* 服务器 IP（默认 127.0.0.1）
+* 服务器 IP（如是 127.0.0.1，则可选择创建内网穿透 API 的实例）
 * 端口（可留空，系统将自动分配 1024–8192 范围内端口）
 * API 前缀（默认 `api`）
 * TLS 模式（0: 无加密, 1: 自签名证书, 2: 自定义证书）
@@ -140,10 +142,11 @@ bash <(curl -sSL https://run.nodepass.eu/np.sh) \
 | `np -i` | 安装 NodePass |
 | `np -u` | 卸载 NodePass |
 | `np -v` | 升级 NodePass |
-| `np -o` | 启动/停止服务     |
+| `np -o` | 启动/停止服务   |
 | `np -k` | 更换 API key  |
+| `np -k` | 更换 API 内网穿透的服务器 |
 | `np -s` | 查看 API 信息   |
-| `np -h` | 显示帮助信息      |
+| `np -h` | 显示帮助信息     |
 
 ---
 
@@ -178,11 +181,11 @@ bash <(curl -sSL https://run.nodepass.eu/np.sh) \
 1. **运行脚本**：
 
 ```bash
-bash <(wget -qO- https://run.nodepass.eu/dash.sh)
+bash <(wget -qO- https://run.nodepass.eu/dash.sh) install
 ```
 或
 ```bash
-bash <(curl -sSL https://run.nodepass.eu/dash.sh)
+bash <(curl -sSL https://run.nodepass.eu/dash.sh) install
 ```
 
 2. **输入信息**：
@@ -204,8 +207,6 @@ bash <(curl -sSL https://run.nodepass.eu/dash.sh)
 
 5. **完成提示**：脚本安装完毕后会输出访问地址和管理员账户信息。
 
----
-
 ### 卸载说明
 
 卸载 NodePassDash 控制面板：
@@ -219,6 +220,30 @@ bash <(curl -sSL https://run.nodepass.eu/dash.sh) uninstall
 ```
 
 将会清理容器、配置文件与挂载目录。
+
+### 更新版本
+
+更新 NodePassDash 容器：
+
+```bash
+bash <(wget -qO- https://run.nodepass.eu/dash.sh) update
+```
+或
+```bash
+bash <(curl -sSL https://run.nodepass.eu/dash.sh) update
+```
+
+将根据本地和远程版本更新。
+
+### 重置密码
+
+```bash
+bash <(wget -qO- https://run.nodepass.eu/dash.sh) resetpwd
+```
+或
+```bash
+bash <(curl -sSL https://run.nodepass.eu/dash.sh) resetpwd
+```
 
 ---
 
