@@ -1535,6 +1535,9 @@ install() {
 
     # 如是需要映射到公网的，则执行 api
     if grep -q '.' <<< "$REMOTE_SERVER_INPUT" && grep -q '.' <<< "$REMOTE_PORT_INPUT"; then
+      # 生成8位随机数字作为alias
+      local CLIENT_ALIAS=$(printf '%08d' $((RANDOM * RANDOM % 100000000)))
+
       # 执行 api
       if [ "$DOWNLOAD_TOOL" = "curl" ]; then
         local CREATE_NEW_INSTANCE_ID=$(curl -ksS -X 'POST' \
@@ -1543,7 +1546,8 @@ install() {
           -H "X-API-Key: ${KEY}" \
           -H 'Content-Type: application/json' \
           -d "{
-            \"url\": \"client://${REMOTE_PASSWORD_INPUT}${URL_SERVER_IP}:${TUNNEL_PORT_INPUT}/127.0.0.1:${PORT}\"
+            \"url\": \"client://${REMOTE_PASSWORD_INPUT}${URL_SERVER_IP}:${TUNNEL_PORT_INPUT}/127.0.0.1:${PORT}?min=4\",
+            \"alias\": \"${CLIENT_ALIAS}\"
           }" 2>&1 | sed 's/{"id":"\([0-9a-f]\{8\}\)".*/\1/')
 
         grep -q "^[0-9a-f]\{8\}$" <<< "${CREATE_NEW_INSTANCE_ID}" && curl -X 'PATCH' "http://127.0.0.1:${PORT}/${PREFIX}/v1/instances/${CREATE_NEW_INSTANCE_ID}" \
@@ -1554,7 +1558,7 @@ install() {
           --header="accept: application/json" \
           --header="X-API-Key: ${KEY}" \
           --header="Content-Type: application/json" \
-          --body-data="{\"url\": \"client://${REMOTE_PASSWORD_INPUT}${URL_SERVER_IP}:${TUNNEL_PORT_INPUT}/127.0.0.1:${PORT}\"}" \
+          --body-data="{\"url\": \"client://${REMOTE_PASSWORD_INPUT}${URL_SERVER_IP}:${TUNNEL_PORT_INPUT}/127.0.0.1:${PORT}?min=4\", \"alias\": \"${CLIENT_ALIAS}\"}" \
           "${HTTP_S}://127.0.0.1:${PORT}/${PREFIX}/v1/instances" 2>&1 | sed 's/{"id":"\([0-9a-f]\{8\}\)".*/\1/')
 
         grep -q "^[0-9a-f]\{8\}$" <<< "${CREATE_NEW_INSTANCE_ID}" && wget --no-check-certificate --method=PATCH \
@@ -1772,6 +1776,9 @@ change_intranet_penetration_server() {
     grep -q '.' <<< "$REMOTE_PASSWORD_INPUT" && REMOTE_PASSWORD_INPUT+="@"
   fi
 
+  # 生成8位随机数字作为alias
+  local CLIENT_ALIAS=$(printf '%08d' $((RANDOM * RANDOM % 100000000)))
+
   # 执行 api
   if [ "$DOWNLOAD_TOOL" = "curl" ]; then
     # 修改内网穿透实例内容
@@ -1781,7 +1788,8 @@ change_intranet_penetration_server() {
       -H "X-API-Key: ${KEY}" \
       -H 'Content-Type: application/json' \
       -d "{
-        \"url\": \"client://${REMOTE_PASSWORD_INPUT}${REMOTE_SERVER_INPUT}:${TUNNEL_PORT_INPUT}/127.0.0.1:${PORT}\"
+        \"url\": \"client://${REMOTE_PASSWORD_INPUT}${REMOTE_SERVER_INPUT}:${TUNNEL_PORT_INPUT}/127.0.0.1:${PORT}?min=4\",
+        \"alias\": \"${CLIENT_ALIAS}\"
       }" &>/dev/null
   else
     # 修改内网穿透实例内容
@@ -1789,7 +1797,7 @@ change_intranet_penetration_server() {
       --header="accept: application/json" \
       --header="X-API-Key: ${KEY}" \
       --header="Content-Type: application/json" \
-      --body-data="{\"url\": \"client://${REMOTE_PASSWORD_INPUT}${REMOTE_SERVER_INPUT}:${TUNNEL_PORT_INPUT}/127.0.0.1:${PORT}\"}" \
+      --body-data="{\"url\": \"client://${REMOTE_PASSWORD_INPUT}${REMOTE_SERVER_INPUT}:${TUNNEL_PORT_INPUT}/127.0.0.1:${PORT}?min=4\", \"alias\": \"${CLIENT_ALIAS}\"}" \
       "${HTTP_S}://127.0.0.1:${PORT}/${PREFIX}/v1/instances/${INSTANCE_ID}" &>/dev/null
   fi
 
