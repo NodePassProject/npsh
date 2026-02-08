@@ -645,8 +645,8 @@ get_random_port() {
 
 get_local_version() {
   if grep -qw 'all' <<< "$1"; then
-    [ -f "$WORK_DIR/np-dev" ] && DEV_LOCAL_VERSION=$(${WORK_DIR}/np-dev 2>/dev/null | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+[^[:space:]]*') || DEV_LOCAL_VERSION=""
-    [ -f "$WORK_DIR/np-stb" ] && STABLE_LOCAL_VERSION=$(${WORK_DIR}/np-stb 2>/dev/null | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+[^[:space:]]*') || STABLE_LOCAL_VERSION=""
+    [ -f "$WORK_DIR/np-dev" ] && DEV_LOCAL_VERSION=$(${WORK_DIR}/np-dev 2>&1 | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+[^[:space:]]*') || DEV_LOCAL_VERSION=""
+    [ -f "$WORK_DIR/np-stb" ] && STABLE_LOCAL_VERSION=$(${WORK_DIR}/np-stb 2>&1 | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+[^[:space:]]*') || STABLE_LOCAL_VERSION=""
   fi
   local GET_SYMLINK_TARGET=$(readlink ${WORK_DIR}/nodepass 2>/dev/null)
   if grep -q 'np-dev' <<< "$GET_SYMLINK_TARGET"; then
@@ -654,7 +654,7 @@ get_local_version() {
   elif grep -q 'np-stb' <<< "$GET_SYMLINK_TARGET"; then
     VERSION_TYPE_TEXT=$(text 67)
   fi
-  RUNNING_LOCAL_VERSION=$(${WORK_DIR}/nodepass 2>/dev/null | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+[^[:space:]]*')
+  RUNNING_LOCAL_VERSION=$(${WORK_DIR}/nodepass 2>&1 | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+[^[:space:]]*')
 }
 
 get_latest_version() {
