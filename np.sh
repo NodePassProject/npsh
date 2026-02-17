@@ -10,9 +10,9 @@ need_root() { [ "$(id -u)" -eq 0 ] || die "root required"; }
 get_latest_version() { curl -fsSL "https://api.github.com/repos/$REPO/releases/latest" | grep '"tag_name"' | cut -d'"' -f4; }
 get_arch() { case "$(uname -m)" in x86_64) echo amd64;; aarch64|arm64) echo arm64;; *) die "unsupported arch: $(uname -m)";; esac; }
 download_binary() {
-    local ver=$(get_latest_version) arch=$(get_arch) os=$(uname -s | tr '[:upper:]' '[:lower:]')
+    local ver=$(get_latest_version) ver_num=${ver#v} arch=$(get_arch) os=$(uname -s | tr '[:upper:]' '[:lower:]')
     echo "Downloading nodepass $ver ..."
-    curl -fsSL "https://github.com/$REPO/releases/download/$ver/nodepass_${os}_${arch}.tar.gz" -o /tmp/nodepass.tar.gz
+    curl -fsSL "https://github.com/$REPO/releases/download/$ver/nodepass_${ver_num}_${os}_${arch}.tar.gz" -o /tmp/nodepass.tar.gz
     tar -xzf /tmp/nodepass.tar.gz -C "$(dirname "$BIN")" && chmod +x "$BIN" && rm -f /tmp/nodepass.tar.gz
 }
 install_service() {
