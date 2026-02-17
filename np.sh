@@ -38,7 +38,7 @@ install() {
     printf "Listen address [0.0.0.0]: "; read -r addr; addr=${addr:-0.0.0.0}
     printf "Listen port [1024]: "; read -r port; port=${port:-1024}
     printf "API prefix (optional): "; read -r pfx
-    printf "TLS (0=none 1=self-signed 2=custom) [0]: "; read -r tls; tls=${tls:-0}
+    printf "TLS (0=none 1=self-signed 2=custom) [1]: "; read -r tls; tls=${tls:-1}
     q="tls=$tls"
     [ "$tls" = "2" ] && {
         printf "Cert path: "; read -r crt
@@ -50,7 +50,7 @@ install() {
     dl && svc && systemctl start nodepass
     sleep 1
     s=http; [ "$tls" != "0" ] && s=https
-    k=$(journalctl -u nodepass -n 50 --no-pager 2>/dev/null | grep -oE 'API Key.*[0-9a-f-]{36}' | grep -oE '[0-9a-f-]{36}' | tail -1)
+    k=$(journalctl -u nodepass -n 50 --no-pager 2>/dev/null | grep "API Key created:" | tail -1 | grep -oE '[0-9a-f]{32}')
     echo "=== NodePass Installed ==="
     echo "URL: $s://$addr:$port$pfx/v1"
     [ -n "$k" ] && echo "Key: $k"
