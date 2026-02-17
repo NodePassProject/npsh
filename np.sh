@@ -14,13 +14,13 @@ dl() {
 }
 
 svc() {
-    cat >$S <<E
+    cat >$S <<'E'
 [Unit]
 Description=NodePass Master
 After=network.target
 [Service]
-ExecStart=$B "\$(cat $C)"
-WorkingDirectory=$D
+ExecStart=/bin/sh -c 'exec /etc/nodepass/nodepass "$(cat /etc/nodepass/nodepass.conf)"'
+WorkingDirectory=/etc/nodepass
 Restart=on-failure
 RestartSec=5
 [Install]
@@ -51,7 +51,7 @@ install() {
     sleep 1
     s=http; [ "$tls" != "0" ] && s=https
     k=$(journalctl -u nodepass -n 50 --no-pager 2>/dev/null | grep -oE 'API Key.*[0-9a-f-]{36}' | grep -oE '[0-9a-f-]{36}' | tail -1)
-    echo "\n=== NodePass Installed ==="
+    echo "=== NodePass Installed ==="
     echo "URL: $s://$addr:$port$pfx/v1"
     [ -n "$k" ] && echo "Key: $k"
     echo "Log: journalctl -fu nodepass"
