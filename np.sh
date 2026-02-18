@@ -78,5 +78,5 @@ uninstall() {
 
 case "${1:-}" in
     install|start|stop|status|update|uninstall) $1 ;;
-    *) echo "Usage: $0 {install|start|stop|status|update|uninstall}"; exit 1 ;;
+    *) echo "Usage: {install|start|stop|status|update|uninstall}"; exit 1 ;;
 esac
