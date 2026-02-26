@@ -256,22 +256,6 @@ bash <(curl -sSL https://run.nodepass.eu/dash.sh) resetpwd
 
 ---
 
-## Deployment Screenshots
-
-<img width="690" alt="image" src="https://github.com/user-attachments/assets/893a3856-ec69-488f-bb99-5df26b4fb4e7" />
-
-<img width="690" alt="image" src="https://github.com/user-attachments/assets/61e01872-f401-485d-aa9a-8c1388e76a5b" />
-
----
-
 ## Feedback
 
 For installation or usage issues, please submit feedback at [GitHub Issues](https://github.com/NodePassProject/npsh/issues).
-
----
-
-## Deployment Screenshots
-
-<img width="690" alt="image" src="https://github.com/user-attachments/assets/893a3856-ec69-488f-bb99-5df26b4fb4e7" />
-
-<img width="690" alt="image" src="https://github.com/user-attachments/assets/61e01872-f401-485d-aa9a-8c1388e76a5b" />
