@@ -20,8 +20,8 @@ mkdir -p $TEMP_DIR
 
 E[0]="\n Language:\n 1. 简体中文 (Default)\n 2. English"
 C[0]="${E[0]}"
-E[1]="1. Supports three versions: stable, development, and classic; 2. Supports switching between the three versions (np -t); 3. Added GitHub proxy"
-C[1]="1. 支持稳定版、开发版和经典版三个版本; 2. 支持三个版本间切换 (np -t); 3. 增加 Github 代理"
+E[1]=""
+C[1]=""
 E[2]="The script must be run as root, you can enter sudo -i and then download and run again. Feedback: [https://github.com/NodePassProject/npsh/issues]"
 C[2]="必须以 root 方式运行脚本，可以输入 sudo -i 后重新下载运行，问题反馈:[https://github.com/NodePassProject/npsh/issues]"
 E[3]="Unsupported architecture: \$(uname -m)"
@@ -874,12 +874,12 @@ compatibility_old_binary() {
     get_latest_version
 
     if [ "$DOWNLOAD_TOOL" = "curl" ]; then
-      curl -sL "${GH_PROXY}https://github.com/NodePassProject/nodepass/releases/download/${LTS_LATEST_VERSION}/nodepass-apt_${LTS_VERSION_NUM}_linux_${ARCH}.tar.gz" | tar -xz -C "$TEMP_DIR"
+      curl -sL "${GH_PROXY}https://github.com/NodePassProject/nodepass/releases/download/${LTS_LATEST_VERSION}/nodepass_${LTS_VERSION_NUM}_linux_${ARCH}.tar.gz" | tar -xz -C "$TEMP_DIR"
     else
-      wget "${GH_PROXY}https://github.com/NodePassProject/nodepass/releases/download/${LTS_LATEST_VERSION}/nodepass-apt_${LTS_VERSION_NUM}_linux_${ARCH}.tar.gz" -qO- | tar -xz -C "$TEMP_DIR"
+      wget "${GH_PROXY}https://github.com/NodePassProject/nodepass/releases/download/${LTS_LATEST_VERSION}/nodepass_${LTS_VERSION_NUM}_linux_${ARCH}.tar.gz" -qO- | tar -xz -C "$TEMP_DIR"
     fi
 
-    [ -s "$TEMP_DIR/nodepass-apt" ] && mv "$TEMP_DIR/nodepass-apt" "$WORK_DIR/np-lts" && chmod +x "$WORK_DIR/np-lts"
+    [ -s "$TEMP_DIR/nodepass" ] && mv "$TEMP_DIR/nodepass" "$WORK_DIR/np-lts" && chmod +x "$WORK_DIR/np-lts"
     get_local_version
   fi
 }
@@ -985,9 +985,9 @@ upgrade_nodepass() {
 
     # 下载开发版
     if [ "$HAS_DEV_UPGRADE" = 1 ]; then
-      curl -sL "${GH_PROXY}https://github.com/NodePassProject/nodepass/releases/download/${DEV_LATEST_VERSION}/nodepass-core_${DEV_VERSION_NUM}_linux_${ARCH}.tar.gz" | tar -xz -C "$TEMP_DIR"
-      if [ -f "$TEMP_DIR/nodepass-core" ]; then
-        mv "$TEMP_DIR/nodepass-core" "$WORK_DIR/np-dev"
+      curl -sL "${GH_PROXY}https://github.com/NodePassProject/nodepass/releases/download/${DEV_LATEST_VERSION}/nodepass_${DEV_VERSION_NUM}_linux_${ARCH}.tar.gz" | tar -xz -C "$TEMP_DIR"
+      if [ -f "$TEMP_DIR/nodepass" ]; then
+        mv "$TEMP_DIR/nodepass" "$WORK_DIR/np-dev"
         chmod +x "$WORK_DIR/np-dev"
       else
         DOWNLOAD_SUCCESS=0
@@ -996,9 +996,9 @@ upgrade_nodepass() {
 
     # 下载经典版(LTS)
     if [ "$HAS_LTS_UPGRADE" = 1 ]; then
-      curl -sL "${GH_PROXY}https://github.com/NodePassProject/nodepass/releases/download/${LTS_LATEST_VERSION}/nodepass-apt_${LTS_VERSION_NUM}_linux_${ARCH}.tar.gz" | tar -xz -C "$TEMP_DIR"
-      if [ -f "$TEMP_DIR/nodepass-apt" ]; then
-        mv "$TEMP_DIR/nodepass-apt" "$WORK_DIR/np-lts"
+      curl -sL "${GH_PROXY}https://github.com/NodePassProject/nodepass/releases/download/${LTS_LATEST_VERSION}/nodepass_${LTS_VERSION_NUM}_linux_${ARCH}.tar.gz" | tar -xz -C "$TEMP_DIR"
+      if [ -f "$TEMP_DIR/nodepass" ]; then
+        mv "$TEMP_DIR/nodepass" "$WORK_DIR/np-lts"
         chmod +x "$WORK_DIR/np-lts"
       else
         DOWNLOAD_SUCCESS=0
@@ -1018,9 +1018,9 @@ upgrade_nodepass() {
 
     # 下载开发版
     if [ "$HAS_DEV_UPGRADE" = 1 ]; then
-      wget "${GH_PROXY}https://github.com/NodePassProject/nodepass/releases/download/${DEV_LATEST_VERSION}/nodepass-core_${DEV_VERSION_NUM}_linux_${ARCH}.tar.gz" -qO- | tar -xz -C "$TEMP_DIR"
-      if [ -f "$TEMP_DIR/nodepass-core" ]; then
-        mv "$TEMP_DIR/nodepass-core" "$WORK_DIR/np-dev"
+      wget "${GH_PROXY}https://github.com/NodePassProject/nodepass/releases/download/${DEV_LATEST_VERSION}/nodepass_${DEV_VERSION_NUM}_linux_${ARCH}.tar.gz" -qO- | tar -xz -C "$TEMP_DIR"
+      if [ -f "$TEMP_DIR/nodepass" ]; then
+        mv "$TEMP_DIR/nodepass" "$WORK_DIR/np-dev"
         chmod +x "$WORK_DIR/np-dev"
       else
         DOWNLOAD_SUCCESS=0
@@ -1029,9 +1029,9 @@ upgrade_nodepass() {
 
     # 下载经典版(LTS)
     if [ "$HAS_LTS_UPGRADE" = 1 ]; then
-      wget "${GH_PROXY}https://github.com/NodePassProject/nodepass/releases/download/${LTS_LATEST_VERSION}/nodepass-apt_${LTS_VERSION_NUM}_linux_${ARCH}.tar.gz" -qO- | tar -xz -C "$TEMP_DIR"
-      if [ -f "$TEMP_DIR/nodepass-apt" ]; then
-        mv "$TEMP_DIR/nodepass-apt" "$WORK_DIR/np-lts"
+      wget "${GH_PROXY}https://github.com/NodePassProject/nodepass/releases/download/${LTS_LATEST_VERSION}/nodepass_${LTS_VERSION_NUM}_linux_${ARCH}.tar.gz" -qO- | tar -xz -C "$TEMP_DIR"
+      if [ -f "$TEMP_DIR/nodepass" ]; then
+        mv "$TEMP_DIR/nodepass" "$WORK_DIR/np-lts"
         chmod +x "$WORK_DIR/np-lts"
       else
         DOWNLOAD_SUCCESS=0
@@ -1255,14 +1255,14 @@ install() {
 
   # 后台下载 NodePass 和 qrencode（60秒超时，重试2次）
   if [ "$DOWNLOAD_TOOL" = "curl" ]; then
-    { curl --connect-timeout 60 --max-time 60 --retry 2 -sL "${GH_PROXY}https://github.com/NodePassProject/nodepass/releases/download/${DEV_LATEST_VERSION}/nodepass-core_${DEV_VERSION_NUM}_linux_${ARCH}.tar.gz" | tar -xz -C "$TEMP_DIR"; } &
+    { curl --connect-timeout 60 --max-time 60 --retry 2 -sL "${GH_PROXY}https://github.com/NodePassProject/nodepass/releases/download/${DEV_LATEST_VERSION}/nodepass_${DEV_VERSION_NUM}_linux_${ARCH}.tar.gz" | tar -xz -C "$TEMP_DIR"; } &
     { curl --connect-timeout 60 --max-time 60 --retry 2 -sL "${GH_PROXY}https://github.com/NodePassProject/nodepass/releases/download/${STABLE_LATEST_VERSION}/nodepass_${STABLE_VERSION_NUM}_linux_${ARCH}.tar.gz" | tar -xz -C "$TEMP_DIR"; } &
-    { curl --connect-timeout 60 --max-time 60 --retry 2 -sL "${GH_PROXY}https://github.com/NodePassProject/nodepass/releases/download/${LTS_LATEST_VERSION}/nodepass-apt_${LTS_VERSION_NUM}_linux_${ARCH}.tar.gz" | tar -xz -C "$TEMP_DIR"; } &
+    { curl --connect-timeout 60 --max-time 60 --retry 2 -sL "${GH_PROXY}https://github.com/NodePassProject/nodepass/releases/download/${LTS_LATEST_VERSION}/nodepass_${LTS_VERSION_NUM}_linux_${ARCH}.tar.gz" | tar -xz -C "$TEMP_DIR"; } &
     { curl --connect-timeout 60 --max-time 60 --retry 2 -o "$TEMP_DIR/qrencode" "${GH_PROXY}https://github.com/fscarmen/client_template/raw/main/qrencode-go/qrencode-go-linux-$ARCH" >/dev/null 2>&1 && chmod +x "$TEMP_DIR/qrencode" >/dev/null 2>&1; } &
   else
-    { wget --timeout=60 --tries=2 "${GH_PROXY}https://github.com/NodePassProject/nodepass/releases/download/${DEV_LATEST_VERSION}/nodepass-core_${DEV_VERSION_NUM}_linux_${ARCH}.tar.gz" -qO- | tar -xz -C "$TEMP_DIR"; } &
+    { wget --timeout=60 --tries=2 "${GH_PROXY}https://github.com/NodePassProject/nodepass/releases/download/${DEV_LATEST_VERSION}/nodepass_${DEV_VERSION_NUM}_linux_${ARCH}.tar.gz" -qO- | tar -xz -C "$TEMP_DIR"; } &
     { wget --timeout=60 --tries=2 "${GH_PROXY}https://github.com/NodePassProject/nodepass/releases/download/${STABLE_LATEST_VERSION}/nodepass_${STABLE_VERSION_NUM}_linux_${ARCH}.tar.gz" -qO- | tar -xz -C "$TEMP_DIR"; } &
-    { wget --timeout=60 --tries=2 "${GH_PROXY}https://github.com/NodePassProject/nodepass/releases/download/${LTS_LATEST_VERSION}/nodepass-apt_${LTS_VERSION_NUM}_linux_${ARCH}.tar.gz" -qO- | tar -xz -C "$TEMP_DIR"; } &
+    { wget --timeout=60 --tries=2 "${GH_PROXY}https://github.com/NodePassProject/nodepass/releases/download/${LTS_LATEST_VERSION}/nodepass_${LTS_VERSION_NUM}_linux_${ARCH}.tar.gz" -qO- | tar -xz -C "$TEMP_DIR"; } &
     { wget --no-check-certificate --timeout=60 --tries=2 --continue -qO "$TEMP_DIR/qrencode" "${GH_PROXY}https://github.com/fscarmen/client_template/raw/main/qrencode-go/qrencode-go-linux-$ARCH" >/dev/null 2>&1 && chmod +x "$TEMP_DIR/qrencode" >/dev/null 2>&1; } &
   fi
   rm -f $TEMP_DIR/{README.md,LICENSE}
@@ -1484,7 +1484,7 @@ install() {
 
   # 等待 NodePass 和 QRencode 下载完成
   wait
-  if [[ -s "$TEMP_DIR/nodepass" && -s "$TEMP_DIR/nodepass-core" && -s "$TEMP_DIR/qrencode" ]]; then
+  if [[ -s "$TEMP_DIR/nodepass" && -s "$TEMP_DIR/nodepass" && -s "$TEMP_DIR/qrencode" ]]; then
     info " $(text 19) "
   elif [[ ! -f "$TEMP_DIR/nodepass" && ! -f "$TEMP_DIR/qrencode" ]]; then
     local APP="NodePass, QRencode" && error "\n $(text 9) "
@@ -1505,8 +1505,8 @@ install() {
 
   # 移动 NodePass稳定版、开发版和经典版，qrencode 可执行文件并设置权限
   mv $TEMP_DIR/nodepass $WORK_DIR/np-stb
-  mv $TEMP_DIR/nodepass-core $WORK_DIR/np-dev
-  mv $TEMP_DIR/nodepass-apt $WORK_DIR/np-lts
+  mv $TEMP_DIR/nodepass $WORK_DIR/np-dev
+  mv $TEMP_DIR/nodepass $WORK_DIR/np-lts
   mv $TEMP_DIR/qrencode $WORK_DIR/
   chmod +x $WORK_DIR/{np-stb,np-dev,np-lts,qrencode}
 
